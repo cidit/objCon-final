@@ -3,11 +3,20 @@
 #include <SPI.h>
 #include <LoRa.h>
 #include <Ecran.h>
-#include "ThingSpeak.h"
+#include <ProtoTGP.h>  //Pour utiliser la librairie ProtoTGP
+// #include "ThingSpeak.h"
 #include <WiFi.h>
 // #include <WiFiMulti.h>  // en complément pour supporter +ieurs config Wifi
 #include <esp_wifi.h>           //requis pour changer la MAC du Wifi
-#include <ArduinoHttpClient.h>  //Librairie wrapper HTTP: arduinoHttpClient v0.6.1
+// #include <ArduinoHttpClient.h>  //Librairie wrapper HTTP: arduinoHttpClient v0.6.1
+#include <Ethernet.h>      // arduino-ethernet v2.0.1
+#include <PubSubClient.h>  // v2.8  https://pubsubclient.knolleary.net/
+#include <ArduinoJson.h>   //Librairie de manipulation document JSON v6.21.0
+#include <Decodeur.h>
+#include "DHT.h"
+#include <ModbusRTUMaster.h>  //https://github.com/CMB27/ModbusRTUMaster
+#include <HardwareSerial.h>   //https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/HardwareSerial.h
+
 #include "secrets.h"
 
 
