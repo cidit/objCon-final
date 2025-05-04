@@ -20,8 +20,8 @@
 #include "timer.hpp"
 #include "sensor.h"
 #include "persistance.hpp"
-#include "lora.hpp"
-#include "secrets.h"
+#include "communication.hpp"
+// #include "secrets.h"
 
 void print_to_screen(Ecran &screen, persistance::dataframe &df, Timer &update_timer, Timer &screen_timer)
 {
@@ -54,6 +54,8 @@ void setup()
   while (!Serial)
     ;
   monEcran.begin();
+
+  lora::init();
 }
 
 void loop()
