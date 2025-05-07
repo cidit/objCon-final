@@ -1,4 +1,3 @@
-#pragma once
 #include <Arduino.h>
 
 #include <LoRa.h>
@@ -74,7 +73,7 @@ namespace lora
     }
 
     // TODO: document
-    bool read(dataframe &out)
+    bool get_df(dataframe &out)
     {
         int packetSize = LoRa.parsePacket();
         if (packetSize)
