@@ -56,16 +56,27 @@ void setup()
   monEcran.begin();
 
   lora::init();
+  sensors::init_all();
+  persistance::init_SD();
 }
 
 void loop()
 {
+  static int id_counter = 0;
   monEcran.refresh();
   auto now = millis();
-  main_timer.is_time_mut(now);
-  screen_scroll_timer.is_time_mut(now);
+  auto is_time = main_timer.is_time_mut(now);
+  
+  
+  if (is_time) {
 
-  persistance::dataframe df{};
-
-  print_to_screen(monEcran, df, main_timer, screen_scroll_timer);
+    auto sensors_df = sensors::read_all();
+    persistance::dataframe df{
+      .recording_id = id_counter++,
+      .sensors = sensors_df,
+    };
+  }
+  
+  
+  
 }
