@@ -53,7 +53,7 @@ HardwareSerial SerialLocal(0);
 // Définitions des broches:
 const uint8_t RX2_pin = 16;
 const uint8_t TX2_pin = 17;
-const uint8_t dePin = 4;
+const uint8_t dePin = 21;
 const int RX0_pin = 3;
 const int TX0_pin = 1;
 
@@ -152,6 +152,7 @@ void loop()
       for (int i = 0; i < qtee; i++)
       {
         SerialLocal.println("\tIR[" + String(i) + "] : " + String(inputRegisters[i], DEC) + " (0x" + String(inputRegisters[i], HEX) + ")");
+        SerialLocal.println(inputRegisters[i] / 10.f);
       }
     }
     else

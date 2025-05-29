@@ -9,7 +9,7 @@
 #include <Ecran.h>
 #include "ThingSpeak.h"
 #include <WiFi.h>
-// #include <WiFiMulti.h>  // en complément pour supporter +ieurs config Wifi
+#include <WiFiMulti.h>  // en complément pour supporter +ieurs config Wifi
 #include <esp_wifi.h>           //requis pour changer la MAC du Wifi
 #include <ArduinoHttpClient.h>  //Librairie wrapper HTTP: arduinoHttpClient v0.6.1
 

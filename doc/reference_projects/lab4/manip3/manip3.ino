@@ -152,7 +152,7 @@ bool is_comm_ok() {
   }
 
   if (!connectMQTT()) {
-    Serial.println("> Probleme de connection avec MQTT")
+    Serial.println("> Probleme de connection avec MQTT");
   }
 
   return true;

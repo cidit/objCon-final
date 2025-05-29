@@ -135,6 +135,6 @@ void loop()
     Serial.print(luminance);
     Serial.println(" lux");
 
-    get_bme280();
+    // get_bme280();
     delay(300);
 }
