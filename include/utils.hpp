@@ -1,5 +1,22 @@
 #pragma once
 
+/**
+ * DÉTAILS IMPORTANTS sur le format des symboles dans ce fichier
+ *
+ * Les namespaces ségrèguent les differentes fonctionnalités de la station de manière standardisée.
+ * Elles comportent toutes une fonction <NAMESPACE>::init() qui initialize la fonctionnalité
+ * de manière synchrone sans valeur de retours.
+ *
+ * Les namespaces SHT20, BME280, GY49 et LORA décrivent des fonctionnalités de "capteurs". (évidament,
+ * le LoRa n'est pas un capteur spécifique comme les autres, mais pour les besoins de la station, il est
+ * plus simple de le considérer comme tel.)
+ *
+ * Ces namespaces de type "capteur" ont deux particularités récurentes:
+ * - elles définissent un type de donnée correspondant aux données attendues du capteur.
+ * - elles implémentent une fonction <NAMESPACE>::read(<DATATYPE>&out) qui sert à effectuer une seule
+ *   lecture synchrone du capteur et qui retourne si la lecture a été effectuée avec succes, ou non.
+ */
+
 #include <Arduino.h>
 #include <ModbusRTUMaster.h> //https://github.com/CMB27/ModbusRTUMaster
 #include <HardwareSerial.h>  //https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/HardwareSerial.h
@@ -23,6 +40,10 @@ struct sensors_data
         luminosity_lux;  // provenance: GY-49
 };
 
+/**
+ * Ceci est le format des données récoltées pour chaques messages de la station.
+ * C'est aussi le format utilisé pour enregistrer des données dans la carte SD
+ */
 struct share_data
 {
     uint16_t system_id;
@@ -31,7 +52,6 @@ struct share_data
     sensors_data sensors;
     float mystery_data; // refer to lora dataframe
 };
-
 
 namespace SHT20
 {
@@ -60,6 +80,15 @@ namespace SHT20
     //  Note: ici c'est l'objet modbus qui s'occupe de contrôler la broche RE/DE pour le RS-485
     ModbusRTUMaster modbus(remote, dePin); // serial port, driver enable pin for rs-485 (optional)
 
+    /**
+     * Nom: SHT20::print_modbus_error
+     * Fonction: converti un code d'erreur modbus en messages d'erreurs descriptifs.
+     * Argument(s) réception: le code d'erreur modbus
+     * Argument(s) de retour: (rien)
+     * Modifie/utilise (globale): (rien)
+     * Notes:
+     * - le code est tiré du laboratoire #5 fait en classe.
+     */
     void print_modbus_error(uint8_t error)
     {
         // Ne sert qu'à décoder l'erreur de chiffre en texte, en cas de besoin:
@@ -269,6 +298,14 @@ namespace LORA
                       CODING_RATE = 5;
     constexpr uint32_t SIGNAL_BAND = 125E3;
 
+    /**
+     * Nom: LORA::frequency_from_channel
+     * Fonction: fait la traduction entre un channel lora et la fréquence qui lui correspond.
+     * Argument(s) réception: le channel
+     * Argument(s) de retour: la fréquance
+     * Modifie/utilise (globale): (rien)
+     * Notes: (rien)
+     */
     const uint64_t frequency_from_channel(int channel)
     {
         constexpr uint32_t START = 902.3E6, INCREMENTS = 200E3;
@@ -342,6 +379,18 @@ namespace LORA
 namespace WIFI
 {
     WiFiMulti wifi_multi;
+
+    /**
+     * Nom: WIFI::init
+     * Fonction: Initialize la fonctionnalité WIFI et enregistre les divers points d'accès auquels la station essayera de se connecter.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: (rien)
+     * Modifie/utilise (globale):
+     * - WiFi
+     * - WIFI::wifi_multi
+     * Notes:
+     * - une amélioration serait de transferer les identifiants et mots de passe des points d'access à un fichier de configuration.
+     */
     void init()
     {
         Serial.println("init [WIFI]");
@@ -354,6 +403,16 @@ namespace WIFI
         wifi_multi.addAP("CAL-Net", "");
     }
 
+    /**
+     * Nom: WIFI::connect
+     * Fonction: Fait la connection et configuration de la fonctionnalité WIFI.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: si la connection est établie ou non.
+     * Modifie/utilise (globale):
+     * - WiFi
+     * - WIFI::wifi_multi
+     * Notes: (rien)
+     */
     bool connect()
     {
         int n = WiFi.scanNetworks();
@@ -378,6 +437,16 @@ namespace WIFI
         return true;
     }
 
+    /**
+     * Nom: WIFI::get_ntp_time
+     * Fonction: récupère le temps unix en secondes.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: le temps unix en secondes.
+     * Modifie/utilise (globale): (rien)
+     * Notes:
+     * - plusieurs valeurs utilisées dans cette fonction doivent être définies dans un fichier `secrets.h`.
+     * - une connection WiFi valide doit être établie avant de pouvoir se connecter à MQTT.
+     */
     time_t get_ntp_time()
     {
         // https://randomnerdtutorials.com/epoch-unix-time-esp32-arduino/
@@ -399,6 +468,17 @@ namespace MQTT
     WiFiClient wifi_client;
     PubSubClient mqtt_client(wifi_client);
 
+    /**
+     * Nom: MQTT::connect
+     * Fonction: Fait la connection et configuration du client mqtt.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: si la connection est établie ou non.
+     * Modifie/utilise (globale):
+     * - MQTT::mqtt_client
+     * Notes:
+     * - plusieurs valeurs utilisées dans cette fonction doivent être définies dans un fichier `secrets.h`.
+     * - une connection WiFi valide doit être établie avant de pouvoir se connecter à MQTT.
+     */
     bool connect()
     {
         mqtt_client.setServer(MQTT_HOST, MQTT_PORT);
@@ -412,6 +492,15 @@ namespace MQTT
         return true;
     }
 
+    /**
+     * Nom: MQTT::init
+     * Fonction: initiallise la fonctionnalité MQTT.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: (rien)
+     * Modifie/utilise (globale):
+     * - MQTT::mqtt_client
+     * Notes: (rien)
+     */
     void init()
     {
         Serial.println("init [MQTT]");
@@ -419,6 +508,16 @@ namespace MQTT
         connect();
     }
 
+    /**
+     * Nom: MQTT::publish
+     * Fonction: Publie un document json sur le topic configuré.
+     * Argument(s) réception: le json à publier
+     * Argument(s) de retour: si la publication a été faite avec succes.
+     * Modifie/utilise (globale):
+     * - MQTT::mqtt_client
+     * Notes:
+     * - MQTT_PUBLISH_TOPIC doit être défini dans un fichier `secrets.h`.
+     */
     bool publish(JsonDocument &json)
     {
         String payload;
@@ -436,6 +535,17 @@ namespace MQTT
     }
 }
 
+/**
+ * Nom: maintain_comms
+ * Fonction: Fait le maintient la communication WIFI et MQTT. Tente de re-connecter si possible ce qui n'est pas connecté si possible.
+ * Argument(s) réception: (rien)
+ * Argument(s) de retour: si la connection est en ligne ou non.
+ * Modifie/utilise (globale):
+ * - WiFi
+ * - WIFI
+ * - MQTT
+ * Notes:  (spécial, source, amélioration, etc) TODO:
+ */
 bool maintain_comms()
 {
     auto comms_online = false;
@@ -454,26 +564,55 @@ bool maintain_comms()
     return comms_online;
 }
 
-namespace SDCARD {
+namespace SDCARD
+{
 
     String filename;
     constexpr uint8_t CHIP_SELECT = 33;
 
-    void init() {
+    /**
+     * Nom: SDCARD::init
+     * Fonction: initialize la sauvegarde via carte SD.
+     * Argument(s) réception: (rien)
+     * Argument(s) de retour: (rien)
+     * Modifie/utilise (globale):
+     * - SD
+     * - SDCARD::filename
+     * Notes:
+     * - Initialize le nom du fichier à l'aide du unix timestamp pour permettre plusieurs activations sur plusieurs jours. Pour cette raison, le WIFI doit fonctionner avant d'appeller cette fonction.
+     */
+    void init()
+    {
         Serial.println("init [SD]");
 
         auto success = SD.begin(CHIP_SELECT);
-        if (not success) {
+        if (not success)
+        {
             Serial.println("SD card fail");
             return;
         }
         filename = "/" + String(WIFI::get_ntp_time()) + ".csv";
         auto dataFile = SD.open(filename, FILE_WRITE);
+        // on initialise l'entête du fichier CSV.
         dataFile.println("id,systemID,timestamp,uptime,temperature,humidite,pression,lumnosite,donneeLoRa");
         dataFile.close();
     }
 
-    bool append_row(share_data&df) {
+    /**
+     * Nom: SDCARD::append_row
+     * Fonction: ajoute une rangée à la fin du fichier CSV actif dans la carte SD.
+     * Argument(s) réception:
+     * - df: dataframe, tramme de données représentant les valeurs des colones de la rangée à ajouter.
+     * Argument(s) de retour: si l'operation a été un succès, ou non.
+     * Modifie/utilise (globale):
+     * - SD
+     * - SDCARD::filename
+     * Notes:
+     * - la fonctionalité doit être initialisée en premier (SDCARD::init).
+     * - il est assumé que l'operation ne ratera jamais.
+     */
+    bool append_row(share_data &df)
+    {
         auto dataFile = SD.open(filename, FILE_APPEND);
         dataFile.print(String(df.recording_id) + ",");
         dataFile.print(String(df.system_id) + ",");

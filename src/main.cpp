@@ -17,7 +17,7 @@ Ecran ecran;
 time_t startup_unix_timestamp = 0;
 JsonDocument json;
 
-IntervalTimer timer(5 * 1000);
+IntervalTimer timer(60 * 1000);
 
 void handle_tb_message(char *topic, byte *payload, unsigned int length)
 {
@@ -52,7 +52,7 @@ void setup()
     Serial.begin(115200);
     while (not Serial)
         ;
-
+        
     ecran.begin();
 
     SHT20::init();
@@ -66,6 +66,8 @@ void setup()
         configTime(NTP_gmtOffset_sec, NTP_daylightOffset_sec, NTP_SERVER);
         startup_unix_timestamp = WIFI::get_ntp_time();
         Serial.println("current unix time: " + String(startup_unix_timestamp));
+    } else {
+        Serial.println("unix time couldnt get initialized");
     }
     
     MQTT::init();
@@ -97,6 +99,13 @@ void loop()
 
     if (timer.is_time_mut(now))
     {
+        // cette section du code a été faite de sorte à pourvoir être étandue facilement
+        // tout en transmettant que les données mises à jour par MQTT.
+        // simplement:
+        // 1. créer un objet dans lequel les données seront écrites (ou non)
+        // 2. lire les valeurs de capteurs
+        // 3. si la lecture est un succès, l'ajouter au document json.
+
         df.recording_id += 1;
         json.clear();
 
@@ -136,6 +145,7 @@ void loop()
         serializeJson(json, Serial);
         Serial.println();
 
+        // la publication sur MQTT n'est faite que si elle est attendue de passer.
         if (is_comms_online) {
             MQTT::publish(json);
         }
